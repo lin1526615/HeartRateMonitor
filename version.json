@@ -1,14 +1,14 @@
 {
-  "name": "v1.3.7a2",
+  "name": "v1.3.7a3",
   "version": 2,
   "VER2": [
     1,
     3,
     7,
-    2
+    3
   ],
-  "gxjs": "(更新): 添加浮动窗口移出屏幕功能以避免遮挡功能等 (1.3.7.2)",
+  "gxjs": "(优化/构建): 更新版本号引用变量名(1.3.7.3)",
 
 
-  "frozen":{"name": "v1.3.6-beta.1", "version": 2, "VER2": [1, 3, 6, 3], "updateTime": "2025-10-24-4:00:00", "gxjs": "本次更新新增浮窗背景纯度设置，修复了定时断开和保存文件无法使用的问题，以及一系列优化", "index": "https://gitcode.com/lin15266115/HeartBeat/releases/v1.3.6-beta.1", "download": "https://gitcode.com/lin15266115/HeartBeat/releases/download/v1.3.6-beta.1/HRMLink.exe"}
+  "frozen":{"name": "v1.3.7-beta", "version": 2, "VER2": [1, 3, 7, 3], "updateTime": "2025-11-23-22:30:00", "gxjs": "(1.3.7.3)本次更新和优化了浮窗拖动体验, 修复开机自启长期以来存在的问题等", "index": "https://gitcode.com/lin15266115/HeartBeat/releases/v1.3.7-beta", "download": "https://gitcode.com/lin15266115/HeartBeat/releases/download/v1.3.7-beta/HRMLink.exe"}
 }

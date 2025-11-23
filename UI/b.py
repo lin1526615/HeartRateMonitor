@@ -1,5 +1,5 @@
 if  __name__ == '__main__':
-    with open(r'_oldfiles\heart-rate.png', 'rb') as f:
+    with open(r'_oldfiles\HR-icon_min.png', 'rb') as f:
         data = f.read()
         with open('UI/heartratepng.py', 'w') as g:
             g.write('img = "')

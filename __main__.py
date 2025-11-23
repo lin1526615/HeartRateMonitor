@@ -34,9 +34,8 @@ def _cr():
         QMessageBox.critical(None, "程序正在运行", "错误：程序正在运行，无法再次启动。", QMessageBox.Ok)
         sys.exit(1)
 
-_cr()
-
-del _cr
+if not (args.updatemode or args.endup):
+    _cr()
 
 # 如果是更新模式，使用简单日志输出
 if args.updatemode:
@@ -57,6 +56,7 @@ if IS_FROZEN:
     if args.endup:
         logger.info("进入更新结束模式...")
         handle_end_update()
+        _cr()
 
 init_config()
 

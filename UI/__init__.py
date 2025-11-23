@@ -14,7 +14,7 @@ from .basicwidgets import *
 from .heartratepng import *
 from .UpDownloadwin import UpdWindow as DownloadWindow
 from system_utils import check_run, AppisRunning, logger, try_except, ups, gs, checkupdate, add_to_startup, remove_from_startup, check_startup
-from version import __version__ as vname
+from version import __version__
 
 from .Floatingwin_old import *
 
@@ -26,7 +26,7 @@ class MainWindow(QMainWindow):
     @try_except("主窗口初始化")
     def __init__(self):
         super().__init__()
-        self.version = vname
+        self.version = __version__
         self.cupd = 0
         self.cupdtime = 0.0
 
@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
         # 启动后台线程检查更新
         if self.settings_ui._get_set("update_check", False, bool):
             self.start_update_check()
-        
+
         try:
             check_run()
         except AppisRunning as e:

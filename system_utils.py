@@ -16,7 +16,7 @@ from version import vname, IS_FROZEN, VER2
 # 采用绝对路径避免开机自启时向c盘写入数据
 basefile = os.path.dirname(sys.executable) if IS_FROZEN else os.path.dirname(__file__)
 print(basefile)
-strlog = ""
+startlog = ""
 class AppisRunning(Exception):pass
 
 # --------进程检测--------
@@ -27,8 +27,14 @@ def check_run():
     else:
         return False
     result = subprocess.check_output(cmd, shell=True)
-    if 'HRMLink.exe' in result.decode('utf-8'):
-        dete = len(result.decode('utf-8').split('HRMLink.exe'))
+    try:
+        res_ = result.decode('gbk')
+    except Exception:
+        res_ = result.decode('utf-8', errors='ignore')
+    global startlog
+    startlog += res_
+    if 'HRMLink.exe' in res_:
+        dete = len(res_.split('HRMLink.exe'))
         if dete > 3:
             print("程序已运行")
             raise AppisRunning
@@ -77,6 +83,7 @@ def getlogger():
     logger.addHandler(handler)
     if isinstance(handler, MyHandler):
         handler.doRollover()
+    logger.info(f"程序启动,启动日志:{startlog}")
     return logger
 
 def upmod_logger():
@@ -86,8 +93,10 @@ def upmod_logger():
 
     if not os.path.exists('log'):
         os.mkdir('log')
+    
+    path = os.path.join(basefile, 'log/uplog.log')
 
-    handler = logging.FileHandler('log/uplog.log', 'a', encoding='utf-8')
+    handler = logging.FileHandler(path, 'a', encoding='utf-8')
     handler.setLevel(logging.DEBUG)
 
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')

@@ -106,8 +106,9 @@ data = [
     ,distribution('qasync'),distribution('winrt-runtime')
 ]
 [add_pak(d_) if d_ else None for d_ in data]
+logger.info(f"[IS_NUITKA: {IS_NUITKA}]")
 try:
-    add_pak(distribution('pyinstaller') if not IS_NUITKA else None)
+    if not IS_NUITKA: add_pak(distribution('pyinstaller'))
 except PackageNotFoundError: pass
 
 max_len = max(map(lambda x: x["len"], packages))

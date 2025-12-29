@@ -97,7 +97,7 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(get_icon())
 
         right_layout = QVBoxLayout()
-        right_layout.addWidget(self.float_ui, 11)
+        right_layout.addWidget(self.float_ui, 12)
         right_layout.addWidget(self.settings_ui, 5)
 
         setting_layout.addLayout(self.device_ui, stretch=2)

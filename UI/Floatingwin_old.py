@@ -236,6 +236,13 @@ class FloatingHeartRateWindow(QWidget):
         self._up_set('padding', padding)
         self.update_style()
 
+    def resetpos(self):
+        """重置窗口位置到主窗口附近"""
+        screen = QApplication.primaryScreen()
+        screen_geo = screen.geometry().center()
+        self.move(screen_geo.x() - self.width() // 2, screen_geo.y() - self.height() // 2)
+        self._up_xy()
+
     def _get_set(self, option: str, default, type_=None):
         """获取设置项"""
         return gs('FloatingWindow', option, default, type_, "浮窗")
@@ -245,6 +252,7 @@ class FloatingHeartRateWindow(QWidget):
         ups('FloatingWindow', option, value, "浮窗")
 
     def _up_xy(self):
+        """更新窗口位置设置"""
         update_settings(FloatingWindow={'x': self.x(), 'y': self.y()})
 
     def closeEvent(self, a0):
@@ -356,10 +364,18 @@ class FloatingWindowSettingUI(QGroupBox):
         # 注册为常规窗口选项
         register_window_check_state = self.floating_window._get_set('register_as_window', False, bool)
         self.register_window_check = CheackBox_("注册为常规窗口(OBS捕获)", float_layout, register_window_check_state, self.toggle_register_as_window)
+        self.register_window_check.setToolTip("将浮动窗口注册为常规窗口, 以便OBS等软件可以捕获窗口内容, 但是会在任务栏显示图标")
 
         # 将窗口移出屏幕以防止遮挡
         moveoutside = self.floating_window._get_set('moveoutside', False, bool)
         CheackBox_("隐藏窗口(obs捕获)", float_layout, moveoutside, self.toggle_moveoutside).setToolTip("将窗口移出屏幕以防止遮挡屏幕内容")
+
+        # 重置位置
+        resetpos_button = QPushButton("重置位置")
+        resetpos_button.setCursor(Qt.PointingHandCursor)
+        resetpos_button.clicked.connect(self.floating_window.resetpos)
+        float_layout.addWidget(resetpos_button)
+
         # 完成布局设置
         self.setLayout(float_layout)
 

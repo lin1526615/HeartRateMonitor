@@ -4,11 +4,11 @@ import sys
 IS_FROZEN = getattr(sys, 'frozen', False) or hasattr(sys, "_MEIPASS") or ("__compiled__" in globals())
 IS_NUITKA = IS_FROZEN and "__compiled__" in globals()
 
-VER2 = (1, 3, 7, 4)
+VER2 = (1, 3, 8, 0)
 BINARY_BUILD = 1
 v1      = ".".join(map(str, VER2[0:3]))
 F_      = "-beta" + (("."+str(BINARY_BUILD)) if BINARY_BUILD else "")
-vname = f"{v1}a{VER2[3]}"
+vname = f"{v1}b{VER2[3]}"
 Fvname  = v1 +  F_
 __version__ = Fvname if IS_FROZEN else vname
 
@@ -19,7 +19,7 @@ if __name__ == "__main__":
              "name": "v" + vname
             ,"version": 2
             ,"VER2": VER2
-            ,"gxjs": "(优化): 修复使用Nuitka编译的应用无法使用的问题(1.3.7.4)"
+            ,"gxjs": "(优化): 优化窗口位置重置功能并调整相关设置(1.3.8.0)"
         }
         text = json.dumps(sdata, ensure_ascii=False, indent=2)
         frozendata = {

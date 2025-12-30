@@ -87,8 +87,9 @@ class FloatingHeartRateWindow(QWidget):
 
     def movetooutside(self):
         """将窗口移动到屏幕外"""
-        # 获取所有屏幕的位置信息
+        # 保存窗口在屏幕内的位置
         self.insidepos = self.pos()
+        # 获取所有屏幕的位置信息
         screens = QApplication.screens()
         # 遍历屏幕获取y最小值
         min_y = min(screen.geometry().y() for screen in screens)
@@ -237,7 +238,7 @@ class FloatingHeartRateWindow(QWidget):
         self.update_style()
 
     def resetpos(self):
-        """重置窗口位置到主窗口附近"""
+        """重置窗口位置"""
         screen = QApplication.primaryScreen()
         screen_geo = screen.geometry().center()
         self.move(screen_geo.x() - self.width() // 2, screen_geo.y() - self.height() // 2)
@@ -363,17 +364,23 @@ class FloatingWindowSettingUI(QGroupBox):
 
         # 注册为常规窗口选项
         register_window_check_state = self.floating_window._get_set('register_as_window', False, bool)
-        self.register_window_check = CheackBox_("注册为常规窗口(OBS捕获)", float_layout, register_window_check_state, self.toggle_register_as_window)
+        self.register_window_check = CheackBox_(
+            "注册为常规窗口(OBS捕获)"
+            ,float_layout
+            ,register_window_check_state
+            ,self.toggle_register_as_window
+        )
         self.register_window_check.setToolTip("将浮动窗口注册为常规窗口, 以便OBS等软件可以捕获窗口内容, 但是会在任务栏显示图标")
 
         # 将窗口移出屏幕以防止遮挡
         moveoutside = self.floating_window._get_set('moveoutside', False, bool)
-        CheackBox_("隐藏窗口(obs捕获)", float_layout, moveoutside, self.toggle_moveoutside).setToolTip("将窗口移出屏幕以防止遮挡屏幕内容")
+        self.moscheackbox = CheackBox_("隐藏窗口(obs捕获)", float_layout, moveoutside, self.toggle_moveoutside)
+        self.moscheackbox.setToolTip("将窗口移出屏幕以防止遮挡屏幕内容")
 
         # 重置位置
         resetpos_button = QPushButton("重置位置")
         resetpos_button.setCursor(Qt.PointingHandCursor)
-        resetpos_button.clicked.connect(self.floating_window.resetpos)
+        resetpos_button.clicked.connect(self.resetpos)
         float_layout.addWidget(resetpos_button)
 
         # 完成布局设置
@@ -388,6 +395,12 @@ class FloatingWindowSettingUI(QGroupBox):
         # 根据初始设置启用或禁用鼠标穿透
         if lock:
             self.toggle_click_through(Qt.Checked)
+
+    def resetpos(self):
+        """重置浮动窗口位置"""
+        # 取消隐藏状态再重置位置
+        self.moscheackbox.setChecked(False)
+        self.floating_window.resetpos()
 
     def update_heart_rate(self, heart_rate=None):
         """更新心率显示"""

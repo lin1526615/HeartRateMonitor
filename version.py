@@ -4,8 +4,8 @@ import sys
 IS_FROZEN = getattr(sys, 'frozen', False) or hasattr(sys, "_MEIPASS") or ("__compiled__" in globals())
 IS_NUITKA = IS_FROZEN and "__compiled__" in globals()
 
-VER2 = (1, 3, 8, 0)
-BINARY_BUILD = 1
+VER2 = (1, 3, 8, 1)
+BINARY_BUILD = 2
 v1      = ".".join(map(str, VER2[0:3]))
 F_      = "-beta" + (("."+str(BINARY_BUILD)) if BINARY_BUILD else "")
 vname = f"{v1}b{VER2[3]}"
@@ -19,7 +19,7 @@ if __name__ == "__main__":
              "name": "v" + vname
             ,"version": 2
             ,"VER2": VER2
-            ,"gxjs": "(优化): 优化窗口位置重置功能并调整相关设置(1.3.8.0)"
+            ,"gxjs": "(优化): 修改托盘图标点击事件处理逻辑以支持不同的点击方式(1.3.8.1)"
         }
         text = json.dumps(sdata, ensure_ascii=False, indent=2)
         frozendata = {

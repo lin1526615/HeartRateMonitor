@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QLabel, QWidget,
     QMessageBox, QGroupBox,
     QSystemTrayIcon, QMenu)
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal, QPoint
 
 import threading
 
@@ -337,9 +337,14 @@ class AppSettingsUI(QGroupBox):
 
     def on_tray_icon_activated(self, reason):
         """托盘图标点击事件"""
-        if reason == QSystemTrayIcon.Trigger:  # 单击
-            # 显示托盘菜单
-            self.tray_icon.contextMenu().popup(self.tray_icon.geometry().center())
+        if reason == 1:  # 右键单击
+            # 显示托盘菜
+            self.tray_icon.contextMenu()
+        elif reason == 3: # 左键单击
+            self.tray_icon.contextMenu().popup(self.tray_icon.geometry().topLeft()-QPoint(0,self.trme.height()))
+        elif reason == QSystemTrayIcon.DoubleClick:
+            self.show_settings.emit()
+        print(reason)
 
     def toggle_use_bg(self, state):
         """切换允许后台运行"""

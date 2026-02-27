@@ -24,7 +24,7 @@ def main(VER2, vname=None):
         [
           StringStruct('FileDescription', '通过低功耗蓝牙协议获取心率并显示 | Compiled using Pyinstaller'),
           StringStruct('ProductVersion', '{", ".join(map(str, VER2[0:3]))}'),
-          StringStruct('LegalCopyright', 'Copyright (C) 2025 Zero_linofe | GPL-3.0 License'),
+          StringStruct('LegalCopyright', 'Copyright (C) 2025-2026 Zero_linofe | GPL-3.0 License'),
           StringStruct('CompanyName', 'Zero_linofe'),
           StringStruct('OriginalFilename', 'HRMLink.exe'),
         ])
@@ -55,7 +55,7 @@ def main(VER2, vname=None):
      --file-version={".".join(map(str, VER2))} ^
   --product-version={".".join(map(str, VER2))} ^
   --file-description="通过低功耗蓝牙协议获取心率并显示 | Compiled using Nuitka" ^
-  --copyright="Copyright (C) 2025 Zero_linofe | GPL-3.0 License" ^
+  --copyright="Copyright (C) 2025-2026 Zero_linofe | GPL-3.0 License" ^
   --windows-icon-from-ico=HR-icon.ico ^
   __main__.py
 """

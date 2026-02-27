@@ -1,13 +1,13 @@
 {
-  "name": "v1.3.8b1",
+  "name": "v1.3.8b2",
   "version": 2,
   "VER2": [
     1,
     3,
     8,
-    1
+    2
   ],
-  "gxjs": "(优化): 修改托盘图标点击事件处理逻辑以支持不同的点击方式(1.3.8.1)",
+  "gxjs": "(更新): 更新检查按钮替换为关于页面, 将下载界面更改为关于页面, 添加版权信息和三方开源许可信息等(1.3.8.2)",
 
 
   "frozen":{"name": "v1.3.7-beta", "version": 2, "VER2": [1, 3, 7, 3], "updateTime": "2025-11-23-22:30:00", "gxjs": "(1.3.7.3)本次更新和优化了浮窗拖动体验, 修复开机自启长期以来存在的问题等", "index": "https://gitcode.com/lin15266115/HeartBeat/releases/v1.3.7-beta", "download": "https://gitcode.com/lin15266115/HeartBeat/releases/download/v1.3.7-beta/HRMLink.exe"}

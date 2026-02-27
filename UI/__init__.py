@@ -12,7 +12,7 @@ import threading
 from .DevCtrl import *
 from .basicwidgets import *
 from .heartratepng import *
-from .UpDownloadwin import UpdWindow as DownloadWindow
+from .about import AboutWindow
 from system_utils import check_run, AppisRunning, logger, try_except, ups, gs, checkupdate, add_to_startup, remove_from_startup, check_startup
 from version import __version__
 
@@ -113,7 +113,7 @@ class MainWindow(QMainWindow):
         self.device_ui.set_act_Devstatus.connect(self.settings_ui.dev_status)
         self.settings_ui.quit_application.connect(self.check_device_status_before_close)
         self.settings_ui.show_settings.connect(self.show_window)
-        self.settings_ui.updsig.connect(self.start_update_check)
+        self.settings_ui.updsig.connect(self.open_about_window)
         def act_HR_clicked():
             if self.settings_ui.devstautus == "连接":
                 self.device_ui.connect_device()
@@ -176,7 +176,9 @@ class MainWindow(QMainWindow):
         QApplication.quit()
 
     def start_update_check(self):
-        """启动后台线程进行自动更新检查"""
+        """启动后台线程进行自动更新检查。
+
+        如果发现新版本，会在主线程中弹出“关于”对话框并提示用户。"""
         def update_check_thread():
             self.status_label.setText("正在检查更新...")
             # 检查更新
@@ -216,7 +218,20 @@ class MainWindow(QMainWindow):
         # 创建并启动线程
         threading.Thread(target=update_check_thread, daemon=True).start()
 
+    def open_about_window(self):
+        """手动打开关于对话框，无自动检查。
+
+        关于对话框本身有“检查更新”按钮。"""
+        self.about_window = AboutWindow(self)
+        self.about_window.show()
+
+    def open_about_window(self):
+        """手动打开关于窗口。"""
+        self.about_window = AboutWindow(self)
+        self.about_window.show()
+
     def updata_window_show(self, index, vname, gxjs, down_url):
+        # 如果后台检查发现有新版本则询问用户是否查看，在about窗口中展示
         self.updmsg_box = QMessageBox(self)
         logger.debug(f"开启了更新提示窗口(-1/-2)")
         self.updmsg_box.setWindowTitle('提示')
@@ -228,9 +243,10 @@ class MainWindow(QMainWindow):
         reply = self.updmsg_box.exec()
         logger.debug(f"reply: {reply} (-2)")
         if reply == 0:
-            self.updwin = DownloadWindow(self)
-            self.updwin.set_url(down_url,index)
-            self.updwin.show()
+            # 打开关于窗口并填充下载地址
+            self.about_window = AboutWindow(self)
+            self.about_window.set_url(down_url, index)
+            self.about_window.show()
 
 # 应用设置UI类
 class AppSettingsUI(QGroupBox):
@@ -295,8 +311,8 @@ class AppSettingsUI(QGroupBox):
             ,lambda state: self._up_set("update_check", state==Qt.Checked)
         )
 
-        # 添加手动检查更新按钮
-        self.check_update_btn = QPushButton("检查更新")
+        self.check_update_btn = QPushButton("关于")
+        # 点击信号交给主窗口处理，通过 updsig 传递
         self.check_update_btn.clicked.connect(self.updsig.emit)
         
         settings_layout.addWidget(self.check_update_btn)

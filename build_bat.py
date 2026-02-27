@@ -2,11 +2,11 @@ import os
 
 def main(VER2, vname=None):
     if not vname: vname = ".".join(map(str, VER2))
-    if os.path.exists("build.bat"):
-        with open("build.bat", "w", encoding="utf-8") as f:
-            f.write(f"pyinstaller HRMLink.spec --clean --distpath=./_dist/{vname}")
-    if os.path.exists("version.txt"):
-        with open("version.txt", "w", encoding="utf-8") as f:
+    if os.path.exists("Build_file/build.bat"):
+        with open("Build_file/build.bat", "w", encoding="utf-8") as f:
+            f.write(f"pyinstaller Build_file/HRMLink.spec --clean --distpath=./_dist/{vname}")
+    if os.path.exists("Build_file/version.txt"):
+        with open("Build_file/version.txt", "w", encoding="utf-8") as f:
             text_ = f"""VSVersionInfo(
   ffi=FixedFileInfo(
     filevers=({", ".join(map(str, VER2))}),
@@ -34,8 +34,8 @@ def main(VER2, vname=None):
 )
 """
             f.write(text_)
-    if os.path.exists("build2.bat"):
-        with open("build2.bat", "w", encoding="utf-8") as f:
+    if os.path.exists("Build_file/build2.bat"):
+        with open("Build_file/build2.bat", "w", encoding="utf-8") as f:
             text__ = rf"""chcp 65001 > nul
 
 .\.conda\python -m nuitka ^
@@ -56,7 +56,7 @@ def main(VER2, vname=None):
   --product-version={".".join(map(str, VER2))} ^
   --file-description="通过低功耗蓝牙协议获取心率并显示 | Compiled using Nuitka" ^
   --copyright="Copyright (C) 2025-2026 Zero_linofe | GPL-3.0 License" ^
-  --windows-icon-from-ico=HR-icon.ico ^
+  --windows-icon-from-ico=./Build_file/HR-icon.ico ^
   __main__.py
 """
             f.write(text__)

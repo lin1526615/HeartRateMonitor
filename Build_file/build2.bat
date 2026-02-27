@@ -18,5 +18,5 @@ chcp 65001 > nul
   --product-version=1.3.8.2 ^
   --file-description="通过低功耗蓝牙协议获取心率并显示 | Compiled using Nuitka" ^
   --copyright="Copyright (C) 2025-2026 Zero_linofe | GPL-3.0 License" ^
-  --windows-icon-from-ico=HR-icon.ico ^
+  --windows-icon-from-ico=./Build_file/HR-icon.ico ^
   __main__.py

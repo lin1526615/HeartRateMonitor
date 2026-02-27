@@ -2,15 +2,15 @@
 
 
 a = Analysis(
-    ['__main__.py'],
+    ['..\__main__.py'],
     pathex=[],
     binaries=[
-        (r'.conda\Library\bin\libcrypto-3-x64.dll', '.'),
-        (r'.conda\Library\bin\libssl-3-x64.dll', '.'),
-        (r'.conda\Library\bin\libexpat.dll', '.'),
-        (r'.conda\Library\bin\liblzma.dll', '.'),
-        (r'.conda\Library\bin\LIBBZ2.dll', '.'),
-        (r'.conda\Library\bin\ffi.dll', '.'),
+        (r'..\.conda\Library\bin\libcrypto-3-x64.dll', '.'),
+        (r'..\.conda\Library\bin\libssl-3-x64.dll', '.'),
+        (r'..\.conda\Library\bin\libexpat.dll', '.'),
+        (r'..\.conda\Library\bin\liblzma.dll', '.'),
+        (r'..\.conda\Library\bin\LIBBZ2.dll', '.'),
+        (r'..\.conda\Library\bin\ffi.dll', '.'),
     ],
     datas=[],
     hiddenimports=['winrt.windows.foundation.collections'],

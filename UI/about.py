@@ -2,7 +2,7 @@ import time
 import webbrowser
 from urllib import request
 from urllib.error import HTTPError
-from PyQt5.QtWidgets import (QDialog, QProgressBar, 
+from PyQt5.QtWidgets import (QWidget, QProgressBar, 
                              QPushButton, QVBoxLayout, QHBoxLayout, QLabel,
                              QTextBrowser)
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -67,14 +67,15 @@ class DownloadThread(QThread):
         self._is_running = False
         self.wait()
 
-class AboutWindow(QDialog):
+class AboutWindow(QWidget):
     """‘关于’对话框，同时包含更新检查和下载功能。"""
 
     # 版本下载相关
     url = ""
     gitcodeurl = None
     githuburl = "https://github.com/lin1526615/HeartRateMonitor"
-    hasupdatapyqtSignal = pyqtSignal(str, str, str, str)  # index, vname, gxjs, down_url
+    hasupdatapyqtSignal = pyqtSignal(str, str, str)  # index, vname, gxjs
+    errorwinopen = pyqtSignal(str, bool, bool)
     cupd = 0
     cupdtime = 0
 
@@ -185,7 +186,7 @@ class AboutWindow(QDialog):
         # 下载线程占位
         self.download_thread = None
 
-    def set_url(self, url, gitcodeurl = None):
+    def set_url(self, url):
         self.url = url
         self.url_label.setText(f"下载地址: {url}")
         self.download_btn.setEnabled(True)
@@ -256,6 +257,9 @@ class AboutWindow(QDialog):
         webbrowser.open(self.githuburl)
 
     # --------- update check helpers ---------
+    def verylarge_error(self, error_message: str, exit_ = True, setiserror = True):
+        self.errorwinopen.emit(error_message, exit_, setiserror)
+
     def check_updates(self):
         """在当前对话框内执行一次更新检查。"""
         # 这个方法在工作线程中调用 checkupdate() 并将结果回传给主线程处理
@@ -265,23 +269,17 @@ class AboutWindow(QDialog):
         from PyQt5.QtCore import QTimer
 
         def _worker():
-            try:
-                update_available, index, vname, gxjs, down_url = checkupdate()
-            except Exception as e:
-                logger.error(f"检查更新出错: {e}", exc_info=True)
-                self.status_label.setText("更新检查失败")
-                return
+
+            update_available, index, vname, gxjs, down_url = checkupdate()
 
             if update_available:
                 if IS_FROZEN:
-                    logger.info(f"发现新版本 v{vname}[{index}]")
                     self.status_label.setText(f"发现新版本 v{vname}[{index}]")
-                    self.set_url(down_url, down_url)
+                    self.set_url(down_url)
                 else:
-                    logger.info(f"发现新版本 v{vname}[{index}]")
                     self.status_label.setText(f"发现新版本 v{vname}[{index}]")
                     # 显示提示和下载界面
-                    self.hasupdatapyqtSignal.emit(index, vname, gxjs, down_url)
+                    self.hasupdatapyqtSignal.emit(index, vname, gxjs)
             else:
                 # 无更新情况根据返回的 index 字段判断
                 if index == "":
@@ -297,14 +295,25 @@ class AboutWindow(QDialog):
                         self.status_label.setText("刚刚已经检查过更新了")
                     elif self.cupd <= 20:
                         self.status_label.setText("刚刚已经检查过更新了喵~")
-                    else:
+                    elif self.cupd <= 30:
                         self.status_label.setText("不要再点了喵~~")
+                    elif self.cupd <= 35:
+                        self.status_label.setText(f"再点我要罢工了喵({self.cupd-30}/5)")
+                    elif self.cupd <= 36:
+                        self.status_label.setText("哈! 我没有开玩笑喵!!!!")
+                    elif self.cupd <= 37:
+                        logger.error("频繁点击更新让猫猫生气了")
+                        self.verylarge_error("频繁点击更新让猫猫生气了, 再按猫猫要把进程吃掉了喵", False, False)
+                        self.verylarge_error("拦截了一个奇怪的错误", False, False)
+                    else:
+                        logger.error("疑似进程被吃了, 程序退出")
+                        self.verylarge_error("嘎嘣一响, 程序崩溃了<(> w <)>")
                 else:
                     self.status_label.setText("更新检查失败")
 
         threading.Thread(target=_worker, daemon=True).start()
 
-    def _show_update_message(self, index, vname, gxjs, down_url):
+    def _show_update_message(self, index, vname, gxjs):
         """在主线程中弹出提示并根据用户选择启动下载。"""
         msg = QLabel  # silence lint
         from PyQt5.QtWidgets import QMessageBox
@@ -319,4 +328,9 @@ class AboutWindow(QDialog):
         if reply == 0:
             # 用户要查看新版本，打开gitcode链接
             webbrowser.open(index)
+
+    def closeEvent(self, event):
+        # 窗口关闭时仅隐藏窗口，不销毁实例
+        event.ignore()
+        self.hide()
 

@@ -1,4 +1,4 @@
-import time
+import sys
 import json
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout,
@@ -14,7 +14,7 @@ from .basicwidgets import *
 from .heartratepng import *
 from .about import AboutWindow
 from system_utils import check_run, AppisRunning, logger, try_except, ups, gs, checkupdate, add_to_startup, remove_from_startup, check_startup
-from version import __version__
+from version import __version__, IS_FROZEN
 
 from .Floatingwin_old import *
 
@@ -105,6 +105,9 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(self.status_label)
 
+        self.about_window = AboutWindow()
+        self.about_window.errorwinopen.connect(self.errorwin)
+
     def setup_connections(self):
         # 连接各模块之间的信号和槽
         self.device_ui.heart_rate_updated.connect(self.float_ui.update_heart_rate)
@@ -174,6 +177,7 @@ class MainWindow(QMainWindow):
             self.settings_ui.tray_icon.hide()
         self.float_ui.floating_window.close()
         QApplication.quit()
+        sys.exit(0)
 
     def start_update_check(self):
         """启动后台线程进行自动更新检查。
@@ -190,28 +194,8 @@ class MainWindow(QMainWindow):
                 if index == "":
                     self.status_label.setText("当前已是最新版本")
                 elif index == "时限禁用":
-                    print(f"{self.cupd} {self.cupdtime}")
-                    if time.time() - self.cupdtime > 15:
-                        self.cupd = 0
-                    self.cupdtime = time.time()
-                    self.cupd += 1
-                    if self.cupd <= 3:
-                        self.status_label.setText("刚刚已经检查过更新了")
-                    elif self.cupd <= 20:
-                        self.status_label.setText("刚刚已经检查过更新了喵~")
-                    elif self.cupd <= 30:
-                        self.status_label.setText("不要再点了喵~~")
-                    elif self.cupd <= 35:
-                        self.status_label.setText(f"再点我要罢工了喵({self.cupd-30}/5)")
-                    elif self.cupd <= 36:
-                        self.status_label.setText("哈! 我没有开玩笑喵!!!!")
-                    elif self.cupd <= 37:
-                        logger.error("频繁点击更新让猫猫生气了")
-                        self.verylarge_error("频繁点击更新让猫猫生气了, 再按猫猫要把进程吃掉了喵", False, False)
-                        self.verylarge_error("拦截了一个奇怪的错误", False, False)
-                    else:
-                        logger.error("疑似进程被吃了, 程序退出")
-                        self.verylarge_error("嘎嘣一响, 程序崩溃了<(> w <)>")
+                    print(f"禁用更新中 {self.cupd} {self.cupdtime}")
+                    self.status_label.setText("禁用更新中...")
                 else:
                     self.status_label.setText("更新检查失败")
 
@@ -219,34 +203,19 @@ class MainWindow(QMainWindow):
         threading.Thread(target=update_check_thread, daemon=True).start()
 
     def open_about_window(self):
-        """手动打开关于对话框，无自动检查。
-
-        关于对话框本身有“检查更新”按钮。"""
-        self.about_window = AboutWindow(self)
-        self.about_window.show()
-
-    def open_about_window(self):
         """手动打开关于窗口。"""
-        self.about_window = AboutWindow(self)
         self.about_window.show()
 
     def updata_window_show(self, index, vname, gxjs, down_url):
-        # 如果后台检查发现有新版本则询问用户是否查看，在about窗口中展示
-        self.updmsg_box = QMessageBox(self)
-        logger.debug(f"开启了更新提示窗口(-1/-2)")
-        self.updmsg_box.setWindowTitle('提示')
-        self.updmsg_box.setText(f'版本-{vname} 已更新:\n {gxjs}')
-        self.updmsg_box.addButton("查看新版本", QMessageBox.YesRole)
-        btn_no = self.updmsg_box.addButton("取消", QMessageBox.NoRole)
-        self.updmsg_box.setDefaultButton(btn_no)
-        logger.debug(f"窗口正常加载 (-1)")
-        reply = self.updmsg_box.exec()
-        logger.debug(f"reply: {reply} (-2)")
-        if reply == 0:
-            # 打开关于窗口并填充下载地址
-            self.about_window = AboutWindow(self)
-            self.about_window.set_url(down_url, index)
+        # 打开关于窗口并填充下载地址
+        if IS_FROZEN:
+            self.about_window.status_label.setText(f"发现新版本 v{vname}[{index}]")
+            self.about_window.set_url(down_url)
             self.about_window.show()
+        else:
+            self.about_window.status_label.setText(f"发现新版本 v{vname}[{index}]")
+            # 显示提示和下载界面
+            self.about_window.hasupdatapyqtSignal.emit(index, vname, gxjs)
 
 # 应用设置UI类
 class AppSettingsUI(QGroupBox):

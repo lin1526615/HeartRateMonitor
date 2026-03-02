@@ -156,7 +156,7 @@ class FloatingHeartRateWindow(QWidget):
         
         # 根据心率值动态改变背景颜色(使用HSB)
         if not isinstance(rate, int):
-            self.bg_color = QColor.fromHsv(0, 0, 0)  # 黑色
+            self.bg_color = QColor.fromHsv(0, 0, bri)  # 黑色
         elif rate < 40:
             self.bg_color = QColor.fromHsv(240, sat, bri)  # 蓝色
         elif rate < 55:

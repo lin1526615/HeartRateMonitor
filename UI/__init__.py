@@ -1,5 +1,6 @@
 import sys
 import json
+import time
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QWidget,
@@ -23,6 +24,8 @@ class MainWindow(QMainWindow):
     updata_window_show_ = pyqtSignal(str, str, str, str)
     errorwinopen = pyqtSignal(str, bool, bool)
     iserror = False
+    scupdatetimeout = 0 # 测试时发现将窗口放在屏幕边缘时，屏幕切换事件会触发多次，导致窗口大小调整过于频繁，所以设置一个时间间隔
+
     @try_except("主窗口初始化")
     def __init__(self):
         super().__init__()
@@ -51,29 +54,65 @@ class MainWindow(QMainWindow):
         self.settings_ui.check_startup()
 
     def auto_FixedSize(self):
-        self.setWindowTitle(f"心率监测设置 -[{self.version}]")
         # 获取逻辑DPI
         sc = self.screen()
-        x_ = sc.logicalDotsPerInchX()
-        y_ = sc.logicalDotsPerInchY()
-        def sfs(x_,y_):
-            self.logical_dpix = x_
-            self.logical_dpiy = y_
-            logger.info(f"逻辑DPI: {self.logical_dpix}x{self.logical_dpiy}")
-            x =  int(self.logical_dpix / 96 * 700)
-            y = int(self.logical_dpiy / 96 * 500)
-            self.setFixedSize(x, y)
+        x_ = sc.physicalDotsPerInchX()
+        y_ = sc.physicalDotsPerInchY()
+        # 获取屏幕大小信息
+        h = sc.availableGeometry().size().height()
+        w = sc.availableGeometry().size().width()
+        print(f"窗口所在屏幕: {sc.name()}; DPI: {x_}x{y_}; 屏幕分辨率: {w}x{h}")
+
+        MIN_FONT_SIZE = 12
+
+        mfx_ = MIN_FONT_SIZE * 8 / min(x_, y_)
+        bz = 1.0
+
+        # 如果缩放后字体大小小于8px，则期望设置为MIN_FONT_SIZE计算出的缩放比值
+        if mfx_ > 1.0:
+            bz = mfx_
+
+        # 计算窗口大小
+        X_outsc = int(x_ / 96 * 700) * bz
+        Y_outsc = int(y_ / 96 * 500) * bz
+
+        # 判断是否超出屏幕
+        bizhix  = 1.0
+        bizhiy  = 1.0
+        if w < X_outsc or h < Y_outsc:
+            bizhix = w / X_outsc
+            bizhiy = h / Y_outsc
+
+        # 完成缩放
+        bz = min(bizhix, bizhiy)
+        print(f"缩放比例: {bz}(x {bizhix}, y {bizhiy}, {mfx_})")
+        swdpi = (int(X_outsc * bz), int(Y_outsc * bz))
+        fs = f"{int(y_ / 8 * mfx_ if mfx_ > 1 else y_ / 8)}"
+        if not hasattr(self, "sizewithdpi"):
+            self.sizewithdpi = swdpi
+            self.setFixedSize(*swdpi)
+            logger.info(f"调整窗口大小: bz:{bz}, 逻辑DPI: {x_}x{y_}, 屏幕大小: {w}x{h}, 窗口大小: {self.sizewithdpi}")
             # 应用字体大小
-            self.setStyleSheet("font-size: " + str(int(self.logical_dpiy / 96 * 12)) + "px;")
+            self.setStyleSheet("font-size: " + fs + "px;")
+        elif self.sizewithdpi != swdpi:
+            self.sizewithdpi = swdpi
+            self.setFixedSize(*swdpi)
+            logger.info(f"调整窗口大小: x{bz}, 逻辑DPI: {x_}x{y_}, 屏幕大小: {w}x{h}, 窗口大小: {self.sizewithdpi}")
+            self.setStyleSheet("font-size: " + fs + "px;")
 
-        if not hasattr(self, "logical_dpix") or not hasattr(self, "logical_dpiy"):
-            sfs(x_,y_)
-        elif self.logical_dpix != x_ or self.logical_dpiy != y_:
-            sfs(x_,y_)
-
+    def moveEvent(self, a0):
+        super().moveEvent(a0)
+        scn = self.screen().name()
+        if self.scupdatetimeout <= time.time() and (not hasattr(self, 'scn') or self.scn != scn):
+            # 测试时发现将窗口放在屏幕边缘时，屏幕切换事件会触发多次，导致窗口大小调整过于频繁，所以设置一个时间间隔
+            self.scupdatetimeout = time.time() + 0.2
+            logger.debug(f"[GUI] 屏幕切换: {scn}")
+            self.scn = scn
+            self.auto_FixedSize()
     def setup_ui(self):
 
         self.auto_FixedSize()
+        self.setWindowTitle(f"心率监测设置 -[{self.version}]")
 
         # 状态栏
         self.status_label = QLabel("准备就绪")
@@ -123,6 +162,8 @@ class MainWindow(QMainWindow):
             else:
                 self.device_ui.disconnect_device()
         self.settings_ui.act_HR_clicked.connect(act_HR_clicked)
+        self.screen().physicalDotsPerInchChanged.connect(self.auto_FixedSize)
+        self.screen().availableGeometryChanged.connect(self.auto_FixedSize)
 
     def show_window(self):
         """显示设置窗口"""

@@ -4,7 +4,7 @@ import sys
 IS_FROZEN = getattr(sys, 'frozen', False) or hasattr(sys, "_MEIPASS") or ("__compiled__" in globals())
 IS_NUITKA = IS_FROZEN and "__compiled__" in globals()
 
-VER2 = (1, 3, 8, 3)
+VER2 = (1, 3, 8, 4)
 BINARY_BUILD = 4
 v1      = ".".join(map(str, VER2[0:3]))
 F_      = "-beta" + (("."+str(BINARY_BUILD)) if BINARY_BUILD else "")
@@ -19,7 +19,7 @@ if __name__ == "__main__":
              "name": "v" + vname
             ,"version": 2
             ,"VER2": VER2
-            ,"gxjs": "(优化): 闲置时浮窗背景应用亮度设置 , 精简自动检查更新的流程等(1.3.8.3)"
+            ,"gxjs": "(优化): 优化设置窗口大小自适应逻辑, 更多场景下触发UI大小自适应(1.3.8.4)"
         }
         text = json.dumps(sdata, ensure_ascii=False, indent=2)
         frozendata = {

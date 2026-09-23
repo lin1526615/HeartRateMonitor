@@ -1,3 +1,4 @@
+import os, sys
 import time
 import webbrowser
 from urllib import request
@@ -7,7 +8,8 @@ from PyQt5.QtWidgets import (QWidget, QProgressBar,
                              QTextBrowser)
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from system_utils import logger, start_update_program, try_except, checkupdate
+from system_utils import (logger, start_update_program, try_except, checkupdate,
+                          mark_update_pending)
 from version import IS_FROZEN
 
 class DownloadThread(QThread):
@@ -27,6 +29,11 @@ class DownloadThread(QThread):
             with request.urlopen(self.url) as response:
                 # 获取文件总大小
                 total_size = int(response.getheader('Content-Length', 0))
+                try:
+                    logger.debug(f"{response.headers}")
+                except Exception as e:
+                    logger.error(f"获取响应头时出错: {e}")
+
                 downloaded_size = 0
 
                 # 以二进制写入模式打开本地文件
@@ -34,7 +41,6 @@ class DownloadThread(QThread):
                     # 每次读取8KB
                     chunk_size = 8192
                     while self._is_running:
-                        print(time.time())
                         chunk = response.read(chunk_size)
                         if not chunk:
                             break
@@ -198,7 +204,9 @@ class AboutWindow(QWidget):
 
         logger.info("开始下载文件")
 
-        save_path = "upd.exe"
+        # 获取executable文件路径
+        executable_path = sys.executable
+        save_path = os.path.join(os.path.dirname(executable_path), "upd.exe")
 
         self.download_thread = DownloadThread(self.url, save_path)
         self.download_thread.progress_signal.connect(self.update_progress)
@@ -216,6 +224,7 @@ class AboutWindow(QWidget):
 
     def download_finished(self, success):
         if success:
+            mark_update_pending(version="test", download_url=self.url)
             self.status_label.setText("下载完成!")
             self.download_btn.setText("重启以应用更新")
             self.download_btn.clicked.connect(start_update_program)

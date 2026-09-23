@@ -75,7 +75,7 @@ class FloatingHeartRateWindow(QWidget):
         self.register_as_window = enabled
         self._up_set('register_as_window', enabled)
         self.update_window_flags()
-        self.show()  # 重新显示以应用新标志
+        self.update_look()  # 更新显示状态以应用新的窗口标志
 
     def set_moveoutside(self, enabled):
         """设置将窗口移动到屏幕外的位置"""
@@ -255,6 +255,12 @@ class FloatingHeartRateWindow(QWidget):
     def _up_xy(self):
         """更新窗口位置设置"""
         update_settings(FloatingWindow={'x': self.x(), 'y': self.y()})
+    
+    def update_look(self):
+        if self._get_set('canlook', True, bool):
+            self.show()
+        else:
+            self.hide()
 
     def closeEvent(self, a0):
         a0.ignore()
@@ -387,14 +393,14 @@ class FloatingWindowSettingUI(QGroupBox):
         self.setLayout(float_layout)
 
         # 根据初始设置显示或隐藏浮动窗口
-        if fwindow_canlook:
-            self.floating_window.show()
-        else:
-            self.floating_window.hide()
-            
+        self.update_look()
+
         # 根据初始设置启用或禁用鼠标穿透
         if lock:
             self.toggle_click_through(Qt.Checked)
+
+    def update_look(self):
+        self.floating_window.update_look()
 
     def resetpos(self):
         """重置浮动窗口位置"""
@@ -431,7 +437,7 @@ class FloatingWindowSettingUI(QGroupBox):
                 ~Qt.WindowTransparentForInput
             )
             self.floating_window._up_set('lock', False) 
-        self.floating_window.show()
+        self.update_look()
 
     def toggle_register_as_window(self, state):
         """切换是否注册为常规窗口"""

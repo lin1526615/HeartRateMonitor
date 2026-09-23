@@ -6,7 +6,8 @@ from version import IS_FROZEN, IS_NUITKA
 
 from system_utils import (check_run,AppisRunning,
      getlogger, upmod_logger, add_errorfunc, handle_exception
-    ,init_config, pip_install_models
+    ,init_config, update_pending, clear_update_pending, start_update_program
+    ,pip_install_models
     ,handle_update_mode,handle_end_update, try_except
 )
 
@@ -34,29 +35,38 @@ def _cr():
         QMessageBox.critical(None, "程序正在运行", "错误：程序正在运行，无法再次启动。", QMessageBox.Ok)
         sys.exit(1)
 
-if not (args.updatemode or args.endup):
-    _cr()
+updmode = bool(args.updatemode)
+if IS_FROZEN and not updmode:
+    import os
+    updmode = os.path.basename(sys.executable) == "upd.exe"
 
-# 如果是更新模式，使用简单日志输出
-if args.updatemode:
+if updmode:
+    # 如果是更新模式，使用简单日志输出
     logger = upmod_logger()
 else:
     logger = getlogger()
 
+
+if IS_FROZEN and not args.updatemode and update_pending():
+    start_update_program()
+
 # 设置全局异常钩子
 sys.excepthook = handle_exception
 
+
+# 更新模式
+if updmode:
+    logger.info("进入更新模式...")
+    handle_update_mode(clear_update_pending)
+
 if IS_FROZEN:
-    # 更新模式
-    if args.updatemode:
-        logger.info("进入更新模式...")
-        handle_update_mode()
 
     # 更新结束模式
     if args.endup:
         logger.info("进入更新结束模式...")
         handle_end_update()
-        _cr()
+
+_cr()
 
 init_config()
 
@@ -123,7 +133,7 @@ packageslogtext = "\n  ".join(
 logger.info("[项目依赖包清单:\n  "+packageslogtext + "\n]")
 
 from UI import MainWindow
-import ctypes 
+import ctypes
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

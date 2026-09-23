@@ -4,8 +4,8 @@ import sys
 IS_FROZEN = getattr(sys, 'frozen', False) or hasattr(sys, "_MEIPASS") or ("__compiled__" in globals())
 IS_NUITKA = IS_FROZEN and "__compiled__" in globals()
 
-VER2 = (1, 3, 8, 4)
-BINARY_BUILD = 4
+VER2 = (1, 3, 8, 5)
+BINARY_BUILD = 5
 v1      = ".".join(map(str, VER2[0:3]))
 F_      = "-beta" + (("."+str(BINARY_BUILD)) if BINARY_BUILD else "")
 vname = f"{v1}b{VER2[3]}"
@@ -19,7 +19,7 @@ if __name__ == "__main__":
              "name": "v" + vname
             ,"version": 2
             ,"VER2": VER2
-            ,"gxjs": "(优化): 优化设置窗口大小自适应逻辑, 更多场景下触发UI大小自适应(1.3.8.4)"
+            ,"gxjs": "(更新): 在使用应用更新功能后不立即重启时延后更新等(1.3.8.5)"
         }
         text = json.dumps(sdata, ensure_ascii=False, indent=2)
         frozendata = {
@@ -36,6 +36,6 @@ if __name__ == "__main__":
         f.write(text)
     try:
         from importlib import import_module
-        buildbatmain = import_module("build_bat").main
+        buildbatmain = import_module("Build_file.build_bat").main
         buildbatmain(VER2, Fvname)
     except Exception: pass

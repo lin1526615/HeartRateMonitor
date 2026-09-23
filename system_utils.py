@@ -13,7 +13,7 @@ from logging.handlers import RotatingFileHandler
 
 from version import vname, IS_FROZEN, VER2
 
-# 采用绝对路径避免开机自启时向c盘写入数据
+# 采用相对于exe文件的路径避免开机自启时向c盘写入数据
 basefile = os.path.dirname(sys.executable) if IS_FROZEN else os.path.dirname(__file__)
 print(basefile)
 startlog = ""
@@ -35,7 +35,7 @@ def check_run():
     startlog += res_
     if 'HRMLink.exe' in res_:
         dete = len(res_.split('HRMLink.exe'))
-        if dete > 3:
+        if dete > 3: # 正常软件运行会产生两个进程，因此这里采用3段以上来判断
             print("程序已运行")
             raise AppisRunning
     return False
@@ -201,6 +201,7 @@ def init_config():
         logger.error(f"无法加载配置文件: {e}", exc_info=True)
 
 def check_sections():
+    """检查配置文件是否有缺失的section"""
     sectionlist = ['GUI', 'FloatingWindow', 'Device']
     s_ = False
     for section in sectionlist:
@@ -341,6 +342,8 @@ def check_startup():
         b_ = os.path.dirname(os.path.abspath(sys.argv[0]))
         value = os.path.join(b_, "start.bat")
 
+    logger.info(f"正在检查启动项 ({value})")
+
     try:
         with reg.OpenKey(key, KEYPATH) as registry_key:
             value_, regtype = reg.QueryValueEx(registry_key, APPNAME)
@@ -354,8 +357,22 @@ def check_startup():
 
 # --------应用更新--------
 
+UPDATE_MARKER = os.path.join(basefile, "upd.pending")
+print(f"{UPDATE_MARKER}")
+
+def mark_update_pending(version:str,download_url:str,):
+    with open(UPDATE_MARKER, "w", encoding="utf-8") as f:
+        f.write(f"{version}|{download_url}")
+
+def update_pending():
+    return os.path.isfile(UPDATE_MARKER)
+
+def clear_update_pending():
+    if os.path.exists(UPDATE_MARKER):
+        os.remove(UPDATE_MARKER)
+
 # 处理更新模式
-def handle_update_mode():
+def handle_update_mode(upset=None):
     """处理更新模式，替换旧的主程序"""
     try:
         # 获取当前可执行文件路径(upd.exe)
@@ -375,12 +392,16 @@ def handle_update_mode():
         logger.info("正在复制更新文件...")
         shutil.copy2(current_exe, target_exe)
         
+        if upset:
+            upset()
+
         # 以-endup参数运行新的主程序
         logger.info("启动新的主程序...")
         os.startfile(target_exe, arguments="-endup")
 
         # 退出当前进程
         logger.info("更新程序即将退出...")
+
         sys.exit(0)
     except Exception as e:
         logger.error(f"更新过程中出错: {e}")
@@ -397,11 +418,14 @@ def handle_end_update():
         # 获取更新文件路径(upd.exe)
         target_dir = os.path.dirname(current_exe)
         update_exe = os.path.join(target_dir, "upd.exe")
-        
+
         # 删除更新文件
         if os.path.exists(update_exe):
             logger.info("正在清理更新文件...")
             os.remove(update_exe)
+
+        # 删除更新标记文件
+        clear_update_pending()
     except Exception as e:
         logger.error(f"清理更新文件时出错: {e}")
 
@@ -444,16 +468,16 @@ def checkupdate() :
         logger.warning(f"更新检查失败(gitcodeURL不可达): {e}")
     except Exception as e:
         logger.error(f"更新检查失败(未标识的错误): {e}", exc_info=True)
-    finally:
+
+    try:
+        return check_with_raw(urlGitee)
+    except Exception as e:
         try:
-            return check_with_raw(urlGitee)
+            logger.warning(f"更新检查失败(gitee): {e}", exc_info=True)
+            return check_with_githubapi(urlGithub)
         except Exception as e:
-            try:
-                logger.warning(f"更新检查失败(gitee): {e}", exc_info=True)
-                return check_with_githubapi(urlGithub)
-            except Exception as e:
-                logger.error(f"更新检查失败(github): {e}", exc_info=True)
-                return False, '失败', '', '', ''
+            logger.error(f"更新检查失败(github): {e}", exc_info=True)
+            return False, '失败', '', '', ''
 
 def check_with_raw(url: str):
     with urllib.request.urlopen(url) as response: 

@@ -1,0 +1,107 @@
+name: 构建（Nuitka）
+
+# Nuitka 编译比 PyInstaller 慢很多（通常 20~40 分钟），且产物未经过完整验证，
+# 因此默认不自动触发，只在 Actions 页面手动运行。
+# 命令与本地 Build_file/build2.bat 保持一致。
+on:
+  workflow_dispatch:
+    inputs:
+      upload_artifact:
+        description: "是否上传构建产物"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
+
+jobs:
+  nuitka:
+    name: Nuitka 编译
+    runs-on: windows-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install "nuitka==2.8.4"
+
+      - name: 使用 Nuitka 编译
+        shell: pwsh
+        run: |
+          $ver = (python -c "import version; print('.'.join(map(str, version.VER2)))").Trim()
+          Write-Host "版本号: $ver"
+
+          $nuitkaArgs = @(
+            "-m", "nuitka",
+            "--output-dir=_nuitka/ci",
+            "--output-filename=HRMLink.exe",
+            "--enable-plugin=pyqt5",
+            "--include-package=bleak",
+            "--include-package=winrt",
+            "--include-package=winrt.windows.foundation.collections",
+            "--onefile",
+            "--standalone",
+            "--windows-console-mode=disable",
+            "--remove-output",
+            "--lto=no",
+            "--assume-yes-for-downloads",
+            "--company-name=Zero_linofe",
+            "--product-name=HRMLink",
+            "--file-version=$ver",
+            "--product-version=$ver",
+            "--file-description=通过低功耗蓝牙协议获取心率并显示 | Compiled using Nuitka",
+            "--copyright=Copyright (C) 2025-2026 Zero_linofe | GPL-3.0 License",
+            "--windows-icon-from-ico=./Build_file/HR-icon.ico",
+            "__main__.py"
+          )
+
+          & python @nuitkaArgs
+          if ($LASTEXITCODE -ne 0) { throw "Nuitka 编译失败，退出码 $LASTEXITCODE" }
+
+      - name: 校验产物
+        shell: pwsh
+        run: |
+          $exe = "_nuitka/ci/HRMLink.exe"
+          if (-not (Test-Path $exe)) {
+            Get-ChildItem -Recurse _nuitka -ErrorAction SilentlyContinue | Select-Object FullName
+            throw "编译失败：没有生成 $exe"
+          }
+
+          $size = (Get-Item $exe).Length
+          Write-Host ("产物大小: {0:N2} MB" -f ($size / 1MB))
+
+          # 冒烟测试：-startup 参数会立即以 0 退出
+          $proc = Start-Process -FilePath $exe -ArgumentList "-startup" -PassThru
+          if (-not $proc.WaitForExit(180000)) {
+            $proc.Kill()
+            throw "冒烟测试超时：$exe -startup 未在 180 秒内退出"
+          }
+          $proc.Refresh()
+          Write-Host "冒烟测试退出码: $($proc.ExitCode)"
+          if ($proc.ExitCode -ne 0) { throw "冒烟测试失败，退出码 $($proc.ExitCode)" }
+
+      - name: 上传构建产物
+        if: inputs.upload_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HRMLink-nuitka-${{ env.PYTHON_VERSION }}-${{ github.sha }}
+          path: _nuitka/ci/HRMLink.exe
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,4 @@
+# 打包工具依赖（仅构建时需要，运行程序不需要）
+# pyinstaller-hooks-contrib 决定了 .dll 等二进制依赖的自动收集结果，同样需要锁定版本
+pyinstaller==6.16.0
+pyinstaller-hooks-contrib==2025.9

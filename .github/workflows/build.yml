@@ -1,0 +1,147 @@
+name: 构建
+
+# 触发方式：
+#   - 推送到 main / 提交 PR：只构建并产出 Artifact，用于验证代码可正常打包
+#   - 推送 v* 标签：构建后自动创建 GitHub Release 并附上 HRMLink.exe
+#   - 手动运行：在 Actions 页面点 "Run workflow" 即可
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+# 默认只读；只有 release 任务需要写权限
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
+
+jobs:
+  build:
+    name: PyInstaller 打包
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    outputs:
+      artifact: ${{ steps.meta.outputs.artifact }}
+      version: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-build.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-build.txt
+
+      - name: 读取版本号
+        id: meta
+        shell: pwsh
+        run: |
+          $vname = (python -c "import version; print(version.vname)").Trim()
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($vname)) {
+            throw "无法从 version.py 读取版本号"
+          }
+
+          if ($env:GITHUB_REF_TYPE -eq "tag") {
+            $artifact = "HRMLink-$($env:GITHUB_REF_NAME)"
+          } else {
+            $sha = $env:GITHUB_SHA.Substring(0, 7)
+            $artifact = "HRMLink-$vname-$sha"
+          }
+          # Artifact 名称不允许出现这些字符（例如标签名里带 / 时）
+          $artifact = $artifact -replace '[\\/:*?"<>|]', '-'
+
+          "version=$vname" >> $env:GITHUB_OUTPUT
+          "artifact=$artifact" >> $env:GITHUB_OUTPUT
+          Write-Host "版本号: $vname"
+          Write-Host "产物名: $artifact"
+
+      - name: 使用 PyInstaller 打包
+        # 使用 CI 专用 spec：不写死 .conda 路径，本地与 GitHub Actions 都能用
+        run: >-
+          python -m PyInstaller Build_file/HRMLink-ci.spec
+          --clean --noconfirm
+          --distpath _dist/ci
+          --workpath build/ci
+
+      - name: 校验打包内容（原生依赖）
+        # 防止"打包成功但产物缺少 DLL"的情况
+        run: python .github/scripts/check_bundle.py
+
+      - name: 校验产物
+        shell: pwsh
+        run: |
+          $exe = "_dist/ci/HRMLink.exe"
+          if (-not (Test-Path $exe)) { throw "打包失败：没有生成 $exe" }
+
+          $size = (Get-Item $exe).Length
+          Write-Host ("产物大小: {0:N2} MB" -f ($size / 1MB))
+          if ($size -lt 5MB) { throw "产物大小异常（$size 字节），可能缺少依赖" }
+
+          # 冒烟测试：-startup 会加载 __main__ / system_utils 等模块（连带 ssl、lzma、bz2），
+          # 用于确认 exe 能正常解包并加载包内的原生依赖；确认后立即以 0 退出
+          # 注意：PyQt5 / qasync / bleak 是在函数内延迟导入的，不在这条路径上，
+          #       它们的 DLL 由上一步的 check_bundle.py 校验
+          $proc = Start-Process -FilePath $exe -ArgumentList "-startup" -PassThru
+          if (-not $proc.WaitForExit(120000)) {
+            $proc.Kill()
+            throw "冒烟测试超时：$exe -startup 未在 120 秒内退出"
+          }
+          $proc.Refresh()
+          Write-Host "冒烟测试退出码: $($proc.ExitCode)"
+          if ($proc.ExitCode -ne 0) { throw "冒烟测试失败，退出码 $($proc.ExitCode)" }
+
+          # 校验版本资源：取固定版本号四段（StringFileInfo 里的字符串在部分环境下读不到）
+          $vi = (Get-Item $exe).VersionInfo
+          $embedded = "$($vi.FileMajorPart).$($vi.FileMinorPart).$($vi.FileBuildPart).$($vi.FilePrivatePart)"
+          Write-Host "可执行文件版本: $embedded"
+          $expected = (python -c "import version; print('.'.join(map(str, version.VER2)))").Trim()
+          if ($embedded -ne $expected) {
+            # 仅告警：版本号不一致不影响程序运行，但会导致 exe 属性显示旧版本
+            Write-Host "::warning::exe 版本 ($embedded) 与 version.py ($expected) 不一致，可运行 python version.py 更新 Build_file/version.txt"
+          }
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.artifact }}
+          path: _dist/ci/HRMLink.exe
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: 发布 Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 下载构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.artifact }}
+          path: dist
+
+      - name: 创建 / 更新 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/HRMLink.exe
+          generate_release_notes: true
+          fail_on_unmatched_files: true

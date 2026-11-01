@@ -1,0 +1,18 @@
+# 运行依赖（Windows / Python 3.12）
+# 版本与本地开发环境（.conda）保持一致，便于本地运行与 GitHub Actions 构建产物一致。
+PyQt5==5.15.11
+PyQt5-Qt5==5.15.2
+PyQt5_sip==12.17.1
+qasync==0.28.0
+
+# 低功耗蓝牙（BLE）支持；bleak 2.x 在 Windows 上依赖下面这些 winrt 包
+bleak==2.1.1
+winrt-runtime==3.2.1
+winrt-Windows.Devices.Bluetooth==3.2.1
+winrt-Windows.Devices.Bluetooth.Advertisement==3.2.1
+winrt-Windows.Devices.Bluetooth.GenericAttributeProfile==3.2.1
+winrt-Windows.Devices.Enumeration==3.2.1
+winrt-Windows.Devices.Radios==3.2.1
+winrt-Windows.Foundation==3.2.1
+winrt-Windows.Foundation.Collections==3.2.1
+winrt-Windows.Storage.Streams==3.2.1

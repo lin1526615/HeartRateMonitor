@@ -19,11 +19,14 @@ import sys
 
 # (显示名, 可接受的产物文件名片段, 缺失时的说明)
 # 片段写法同时兼容 conda（libssl-3-x64.dll / ffi.dll）与 python.org（libssl-3.dll / libffi-8.dll）
+#
+# 注意：不要在这里检查 lzma / bz2。python.org 的 CPython 把这两个库静态链接进了
+# _lzma.pyd / _bz2.pyd，产物里不会出现 liblzma.dll / libbz2.dll；只有 conda 环境
+# 才会带独立 DLL。模块能否正常导入由后面的 -startup 冒烟测试负责验证。
 REQUIRED: list[tuple[str, tuple[str, ...], str]] = [
     ("libssl", ("libssl",), "SSL 支持（检查更新需要访问 https）"),
     ("libcrypto", ("libcrypto",), "SSL / hashlib 支持"),
     ("libffi", ("libffi", "ffi.dll"), "ctypes 支持"),
-    ("liblzma", ("liblzma",), "lzma 支持"),
     ("Qt5Core", ("qt5core.dll",), "Qt 核心库"),
     ("Qt5Widgets", ("qt5widgets.dll",), "Qt 控件库"),
     ("qwindows", ("qwindows.dll",), "Qt Windows 平台插件（缺少时窗口无法显示）"),

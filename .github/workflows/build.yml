@@ -52,7 +52,7 @@ jobs:
         id: meta
         shell: pwsh
         run: |
-          $vname = (python -c "import version; print(version.vname)").Trim()
+          $vname = (python -c "import version; print(version.Fvname)").Trim()
           if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($vname)) {
             throw "无法从 version.py 读取版本号"
           }

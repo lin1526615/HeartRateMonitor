@@ -5,11 +5,11 @@ IS_FROZEN = getattr(sys, 'frozen', False) or hasattr(sys, "_MEIPASS") or ("__com
 IS_NUITKA = IS_FROZEN and "__compiled__" in globals()
 
 VER2 = (1, 3, 8, 5)
-BINARY_BUILD = 5
+BINARY_BUILD = 0
 v1      = ".".join(map(str, VER2[0:3]))
-F_      = "-beta" + (("."+str(BINARY_BUILD)) if BINARY_BUILD else "")
+F_      = "-R" + (("."+str(BINARY_BUILD)) if BINARY_BUILD else "")
 vname = f"{v1}b{VER2[3]}"
-Fvname  = v1 +  F_
+Fvname  = v1 + F_
 __version__ = Fvname if IS_FROZEN else vname
 
 if __name__ == "__main__":
@@ -26,8 +26,8 @@ if __name__ == "__main__":
                  "name": "v" + Fvname
                 ,"version": 2
                 ,"VER2": VER2
-                ,"updateTime": "2025-11-23-22:30:00"
-                ,"gxjs": "(1.3.7.3)本次更新和优化了浮窗拖动体验, 修复开机自启长期以来存在的问题等"
+                ,"updateTime": "2026-11-3-12:00:00"
+                ,"gxjs": "(1.3.8-R)更新了关于页面功能,优化了更新功能和设置界面DPI自适应等"
                 ,"index": f"https://gitcode.com/lin15266115/HeartBeat/releases/v{Fvname}"
                 ,"download": f"https://gitcode.com/lin15266115/HeartBeat/releases/download/v{Fvname}/HRMLink.exe"
             }
